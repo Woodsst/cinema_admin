@@ -21,3 +21,9 @@ class Tables(enum.Enum):
     PERSON = Person
     GENRE = Genre
     FILMWORK = Filmwork
+
+
+class Roles(enum.Enum):
+    ACTOR = 'actor'
+    DIRECTOR = 'director'
+    WRITER = 'writer'
