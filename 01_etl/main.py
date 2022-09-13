@@ -9,7 +9,8 @@ from elasticsearch import Elasticsearch
 from psycopg2.extras import DictCursor
 
 from elasticsearch_load.elastic_load_data import ElasticLoad
-from postgres_extractor.extract_postgres import PostgresExtractor, Tables
+from postgres_extractor.extract_postgres import PostgresExtractor
+from postgres_extractor.tables import Genre, Person, Filmwork, Tables
 from src.logging_config import logger
 from src.state import State, JsonFileStorage
 
@@ -31,9 +32,9 @@ class ETL:
             zero_time = str(datetime.datetime(1, 1, 1, 0, 0, 0, 0,
                                               tzinfo=datetime.timezone.utc))
             state_form = {
-                Tables.GENRE.value.NAME.value: zero_time,
-                Tables.PERSON.value.NAME.value: zero_time,
-                Tables.FILMWORK.value.NAME.value: zero_time
+                Genre.NAME: zero_time,
+                Person.NAME: zero_time,
+                Filmwork.NAME: zero_time
             }
             state_file.save_state(state_form)
 
@@ -46,18 +47,18 @@ class ETL:
         while True:
             time.sleep(self.research_time)
 
-            for table in Tables:
-                state = self.state.get_state(table.value.NAME.value)
+            for table in Tables.tables_set:
+                state = self.state.get_state(table.NAME)
                 postgres_check = self.postgres.check_update_table(state,
                                                                   table)
                 for data, time_update in postgres_check:
                     if data is None:
-                        self.state.set_state(table.value.NAME.value,
+                        self.state.set_state(table.NAME,
                                              time_update)
                         continue
                     for movies in data:
                         self.elastic.load_movies(movies)
-                        self.state.set_state(table.value.NAME.value,
+                        self.state.set_state(table.NAME,
                                              time_update)
 
 

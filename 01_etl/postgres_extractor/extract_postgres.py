@@ -21,7 +21,7 @@ class PostgresExtractor:
             FROM content.{0}
             WHERE modified > '{1}'
             ORDER BY modified
-            """.format(table.value.NAME.value, update_time))
+            """.format(table.NAME, update_time))
 
             changed_ids = cur.fetchall()
             if len(changed_ids) == 0:
@@ -29,7 +29,7 @@ class PostgresExtractor:
             time_last_update = str(changed_ids[-1]['modified'])
             changed_ids = tuple([x['id'] for x in changed_ids])
 
-            logger.info(f'table - {table}, changes found in {changed_ids}')
+            logger.info(f'table - {table.NAME}, changes found in {changed_ids}')
 
             if len(changed_ids) == 1:
                 changed_ids = f"('{changed_ids[0]}')"
@@ -41,8 +41,8 @@ class PostgresExtractor:
             else:
                 modify_filmworks_ids = self.load_modified_id(
                     changed_ids,
-                    id=table.value.ID.value,
-                    table=table.value.FOREIGN_KEY.value
+                    id=table.ID,
+                    table=table.FOREIGN_KEY
                 )
 
                 if len(modify_filmworks_ids) == 0:
