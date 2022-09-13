@@ -15,10 +15,11 @@ from src.state import State, JsonFileStorage
 
 
 class ETL:
-    def __init__(self, postgres_con, elasticsearch_con):
+    def __init__(self, postgres_con, elasticsearch_con, research_time: int):
         self.elastic = ElasticLoad(elasticsearch_con)
         self.postgres = PostgresExtractor(con=postgres_con, fetch_size=1000)
         self.state = self.init_state()
+        self.research_time = research_time
 
     @staticmethod
     def init_state():
@@ -43,7 +44,7 @@ class ETL:
         tables and update data in elasticsearch"""
 
         while True:
-            time.sleep(3)
+            time.sleep(self.research_time)
 
             for table in Tables:
                 state = self.state.get_state(table.value.NAME.value)
@@ -79,7 +80,9 @@ if __name__ == "__main__":
             with psycopg2.connect(**postgres_dsl, cursor_factory=DictCursor) as postgres_con, Elasticsearch(
                     os.environ.get("ELASTICSEARCH")) as elastic:
                 elastic.info()
-                etl = ETL(postgres_con=postgres_con, elasticsearch_con=elastic)
+                etl = ETL(postgres_con=postgres_con,
+                          elasticsearch_con=elastic,
+                          research_time=int(os.environ.get("RESEARCH_TIME")))
                 etl.run()
 
         except psycopg2.InterfaceError:
