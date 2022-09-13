@@ -1,31 +1,8 @@
 import datetime
-import enum
 from typing import Generator, Union
-
+from postgres_extractor.tables import Tables
 from elasticsearch_load.movie_model import Movie
 from src.logging_config import logger
-
-
-class Genre(enum.Enum):
-    NAME = 'genre'
-    ID = 'genre_id'
-    FOREIGN_KEY = 'genre_film_work'
-
-
-class Person(enum.Enum):
-    NAME = 'person'
-    ID = 'person_id'
-    FOREIGN_KEY = 'person_film_work'
-
-
-class Filmwork(enum.Enum):
-    NAME = 'film_work'
-
-
-class Tables(enum.Enum):
-    PERSON = Person
-    GENRE = Genre
-    FILMWORK = Filmwork
 
 
 class PostgresExtractor:
@@ -46,24 +23,24 @@ class PostgresExtractor:
             ORDER BY modified
             """.format(table.value.NAME.value, update_time))
 
-            result = cur.fetchall()
-            if len(result) == 0:
+            changed_ids = cur.fetchall()
+            if len(changed_ids) == 0:
                 return
-            time_last_update = str(result[-1]['modified'])
-            result = tuple([x['id'] for x in result])
+            time_last_update = str(changed_ids[-1]['modified'])
+            changed_ids = tuple([x['id'] for x in changed_ids])
 
-            logger.info(f'table - {table}, changes found in {result}')
+            logger.info(f'table - {table}, changes found in {changed_ids}')
 
-            if len(result) == 1:
-                result = f"('{result[0]}')"
+            if len(changed_ids) == 1:
+                changed_ids = f"('{changed_ids[0]}')"
 
             if table == Tables.FILMWORK:
-                film_work_result = self.extract_data_for_load_in_elastic(result)
+                film_work_result = self.extract_data_for_load_in_elastic(changed_ids)
                 yield film_work_result, time_last_update
 
             else:
                 modify_filmworks_ids = self.load_modified_id(
-                    result,
+                    changed_ids,
                     id=table.value.ID.value,
                     table=table.value.FOREIGN_KEY.value
                 )
@@ -87,12 +64,12 @@ class PostgresExtractor:
             ORDER BY fw.modified
             """.format(table, id, list_id))
 
-            result = cur.fetchall()
+            changed_filmwork_ids = cur.fetchall()
 
-            if len(result) == 1:
-                return f"('{result[0][0]}')"
+            if len(changed_filmwork_ids) == 1:
+                return f"('{changed_filmwork_ids[0][0]}')"
 
-            return tuple([x['id'] for x in result])
+            return tuple([x['id'] for x in changed_filmwork_ids])
 
     def extract_data_for_load_in_elastic(self, list_id: tuple) -> Union[list[Movie], None]:
         """Load all movies data for recording in elasticsearch"""
@@ -121,25 +98,25 @@ class PostgresExtractor:
                 """.format(list_id))
 
             while True:
-                result = cur.fetchmany(self.fetch_size)
+                filmworks_data = cur.fetchmany(self.fetch_size)
 
-                if len(result) == 0:
+                if len(filmworks_data) == 0:
                     return
-                yield self.formatting(result)
+                yield self.formatting(filmworks_data)
 
-    def formatting(self, count: list) -> list[Movie]:
+    def formatting(self, filmworks_data: list) -> list[Movie]:
         """Formate data for load in elasticsearch"""
 
         movies = []
-        start = count[0]
+        first = filmworks_data[0]
         s = Movie(
-            fw_id=start['fw_id'],
-            description=start['description'],
-            imdb_rating=start['rating'],
-            title=start['title'],
+            fw_id=first['fw_id'],
+            description=first['description'],
+            imdb_rating=first['rating'],
+            title=first['title'],
         )
 
-        for movie in count:
+        for movie in filmworks_data:
 
             if s.fw_id != movie['fw_id']:
                 movies.append(s)
@@ -170,7 +147,7 @@ class PostgresExtractor:
             if genre not in s.genre:
                 s.genre.append(genre)
 
-            if movie == count[-1]:
+            if movie == filmworks_data[-1]:
                 movies.append(s)
 
         return movies
