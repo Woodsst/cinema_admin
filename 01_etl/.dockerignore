@@ -1,7 +1,3 @@
-venv
-.idea
-__pycache__
-.env
 all_messages.log
 state.json
 ex.py

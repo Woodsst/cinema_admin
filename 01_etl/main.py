@@ -2,21 +2,21 @@ import datetime
 import os
 import time
 
-import elasticsearch
 import psycopg2
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 from psycopg2.extras import DictCursor
 
+from src.logging_config import logger
 from elasticsearch_load.elastic_load_data import ElasticLoad
 from postgres_extractor.extract_postgres import PostgresExtractor
 from postgres_extractor.tables import Genre, Person, Filmwork, Tables
-from src.logging_config import logger
+from src.backoff import backoff
 from src.state import State, JsonFileStorage
 
 
 class ETL:
-    def __init__(self, postgres_con, elasticsearch_con, research_time: int):
+    def __init__(self, postgres_con, elasticsearch_con, research_time: float):
         self.elastic = ElasticLoad(elasticsearch_con)
         self.postgres = PostgresExtractor(con=postgres_con, fetch_size=1000)
         self.state = self.init_state()
@@ -62,6 +62,19 @@ class ETL:
                                              time_update)
 
 
+@backoff()
+def main(postgres_dsl, elastic_connect):
+    with psycopg2.connect(**postgres_dsl, cursor_factory=DictCursor) as postgres_con, Elasticsearch(
+            elastic_connect) as elastic:
+        elastic.info()
+
+        etl = ETL(postgres_con=postgres_con,
+                  elasticsearch_con=elastic,
+                  research_time=float(os.environ.get("RESEARCH_TIME")))
+        logger.info('app start')
+        etl.run()
+
+
 if __name__ == "__main__":
     load_dotenv()
     postgres_dsl = {'dbname': os.environ.get("DB_NAME"),
@@ -69,39 +82,5 @@ if __name__ == "__main__":
                     'password': os.environ.get("DB_PASSWORD"),
                     'host': os.environ.get("DB_HOST"),
                     'port': os.environ.get("DB_PORT")}
-    connect_postgres_timer = 0
-    connect_elastic_timer = 0
-    logger.info('app start')
-
-    while True:
-        time.sleep(connect_postgres_timer)
-        time.sleep(connect_elastic_timer)
-        try:
-
-            with psycopg2.connect(**postgres_dsl, cursor_factory=DictCursor) as postgres_con, Elasticsearch(
-                    os.environ.get("ELASTICSEARCH")) as elastic:
-                elastic.info()
-                etl = ETL(postgres_con=postgres_con,
-                          elasticsearch_con=elastic,
-                          research_time=int(os.environ.get("RESEARCH_TIME")))
-                etl.run()
-
-        except psycopg2.InterfaceError:
-            logger.warning(f'Database connection break, the next connection request after {connect_postgres_timer} sec')
-            connect_postgres_timer += 1
-            if connect_postgres_timer == 31:
-                connect_postgres_timer = 1
-
-        except psycopg2.OperationalError:
-            logger.warning(
-                f'Database connection refused, the next connection request after {connect_postgres_timer} sec')
-            connect_postgres_timer += 1
-            if connect_postgres_timer == 31:
-                connect_postgres_timer = 1
-
-        except elasticsearch.exceptions.ConnectionError:
-            logger.warning(
-                f'Elasticsearch connection refused, the next connection request after {connect_elastic_timer} sec')
-            connect_elastic_timer += 1
-            if connect_elastic_timer == 31:
-                connect_elastic_timer = 1
+    elastic = os.environ.get("ELASTICSEARCH")
+    main(postgres_dsl, elastic)
