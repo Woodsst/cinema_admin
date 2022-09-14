@@ -1,11 +1,16 @@
 import time
 from functools import wraps
-from src.logging_config import logger
+from logging import Logger
+
 import elasticsearch
 import psycopg2
+from src.logging_config import logger
 
 
-def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=25):
+def backoff(start_sleep_time: float = 0.1,
+            factor: int = 2,
+            border_sleep_time: int = 25,
+            log: Logger = logger):
     """
     Функция для повторного выполнения функции через некоторое время, если возникла ошибка.
     Использует наивный экспоненциальный рост времени повтора (factor) до граничного времени ожидания (border_sleep_time)
@@ -16,6 +21,7 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=25):
     :param start_sleep_time: начальное время повтора
     :param factor: во сколько раз нужно увеличить время ожидания
     :param border_sleep_time: граничное время ожидания
+    :param log: логер
     :return: результат выполнения функции
     """
 
@@ -30,25 +36,26 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=25):
                 try:
                     func(*args)
                 except psycopg2.OperationalError:
-                    logger.warning(
+                    log.warning(
                         f'Database connection refused, the next connection request after {connect_timer} sec')
                     connect_timer = connect_timer * 2 ** factor
                     if connect_timer > border_sleep_time:
                         connect_timer = start_sleep_time
 
                 except psycopg2.InterfaceError:
-                    logger.warning(
+                    log.warning(
                         f'Database connection break, the next connection request after {connect_timer} sec')
                     connect_timer = connect_timer * 2 ** factor
                     if connect_timer > border_sleep_time:
                         connect_timer = start_sleep_time
 
                 except elasticsearch.exceptions.ConnectionError:
-                    logger.warning(
+                    log.warning(
                         f'Elasticsearch connection refused, the next connection request after {connect_timer} sec')
                     connect_timer = connect_timer * 2 ** factor
                     if connect_timer > border_sleep_time:
                         connect_timer = start_sleep_time
+
         return inner
 
     return func_wrapper
