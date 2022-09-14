@@ -3,7 +3,6 @@ import os
 import time
 
 import psycopg2
-from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 from psycopg2.extras import DictCursor
 
@@ -13,12 +12,16 @@ from postgres_extractor.extract_postgres import PostgresExtractor
 from postgres_extractor.tables import Genre, Person, Filmwork, Tables
 from src.backoff import backoff
 from src.state import State, JsonFileStorage
+from src.settings import Settings
 
 
 class ETL:
-    def __init__(self, postgres_con, elasticsearch_con, research_time: float):
+    def __init__(self, postgres_con,
+                 elasticsearch_con,
+                 research_time: float,
+                 fetchsize: int):
         self.elastic = ElasticLoad(elasticsearch_con)
-        self.postgres = PostgresExtractor(con=postgres_con, fetch_size=1000)
+        self.postgres = PostgresExtractor(con=postgres_con, fetch_size=fetchsize)
         self.state = self.init_state()
         self.research_time = research_time
 
@@ -61,25 +64,21 @@ class ETL:
 
 
 @backoff()
-def main(postgres_dsl: dict, elastic_connect: str):
+def main(settings: Settings):
+    """Connect postgres and elasticsearch for ETL run"""
 
-    with psycopg2.connect(**postgres_dsl, cursor_factory=DictCursor) as postgres_con, Elasticsearch(
-            elastic_connect) as elastic:
+    with psycopg2.connect(**settings.postgres_dsl, cursor_factory=DictCursor) as postgres_con, Elasticsearch(
+            settings.elasticsearch_connect) as elastic:
         elastic.info()
 
         etl = ETL(postgres_con=postgres_con,
                   elasticsearch_con=elastic,
-                  research_time=float(os.environ.get("RESEARCH_TIME")))
+                  research_time=settings.research_time,
+                  fetchsize=settings.postgres_fetchsize)
         logger.info('app start')
         etl.run()
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    postgres_dsl = {'dbname': os.environ.get("DB_NAME"),
-                    'user': os.environ.get("DB_USER"),
-                    'password': os.environ.get("DB_PASSWORD"),
-                    'host': os.environ.get("DB_HOST"),
-                    'port': os.environ.get("DB_PORT")}
-    elastic = os.environ.get("ELASTICSEARCH")
-    main(postgres_dsl, elastic)
+    settings = Settings()
+    main(settings)
