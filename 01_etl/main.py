@@ -29,8 +29,7 @@ class ETL:
         state_file = JsonFileStorage('./state.json')
 
         if 'state.json' not in os.listdir(os.getcwd()):
-            zero_time = str(datetime.datetime(1, 1, 1, 0, 0, 0, 0,
-                                              tzinfo=datetime.timezone.utc))
+            zero_time = str(datetime.datetime.min)
             state_form = {
                 Genre.NAME: zero_time,
                 Person.NAME: zero_time,
@@ -56,14 +55,14 @@ class ETL:
                         self.state.set_state(table.NAME,
                                              time_update)
                         continue
-                    for movies in data:
-                        self.elastic.load_movies(movies)
-                        self.state.set_state(table.NAME,
-                                             time_update)
+                    self.elastic.load_movies(data)
+                    self.state.set_state(table.NAME,
+                                         time_update)
 
 
 @backoff()
-def main(postgres_dsl, elastic_connect):
+def main(postgres_dsl: dict, elastic_connect: str):
+
     with psycopg2.connect(**postgres_dsl, cursor_factory=DictCursor) as postgres_con, Elasticsearch(
             elastic_connect) as elastic:
         elastic.info()

@@ -23,34 +23,35 @@ class PostgresExtractor:
             ORDER BY modified
             """.format(table.NAME, update_time))
 
-            changed_ids = cur.fetchall()
-            if len(changed_ids) == 0:
-                return
-            time_last_update = str(changed_ids[-1]['modified'])
-            changed_ids = tuple([x['id'] for x in changed_ids])
+            while changed_ids := cur.fetchmany(self.fetch_size):
 
-            logger.info(f'table - {table.NAME}, changes found in {changed_ids}')
-
-            if len(changed_ids) == 1:
-                changed_ids = f"('{changed_ids[0]}')"
-
-            if table == Tables.FILMWORK:
-                film_work_result = self.extract_data_for_load_in_elastic(changed_ids)
-                yield film_work_result, time_last_update
-
-            else:
-                modify_filmworks_ids = self.load_modified_id(
-                    changed_ids,
-                    id=table.ID,
-                    table=table.FOREIGN_KEY
-                )
-
-                if len(modify_filmworks_ids) == 0:
-                    yield None, time_last_update
+                if len(changed_ids) == 0:
                     return
+                time_last_update = str(changed_ids[-1]['modified'])
+                changed_ids = tuple([x['id'] for x in changed_ids])
 
-                movies = self.extract_data_for_load_in_elastic(modify_filmworks_ids)
-                yield movies, time_last_update
+                logger.info(f'table - {table.NAME}, changes found in {changed_ids}')
+
+                if len(changed_ids) == 1:
+                    changed_ids = f"('{changed_ids[0]}')"
+
+                if table == Tables.FILMWORK:
+                    film_work_result = self.extract_data_for_load_in_elastic(changed_ids)
+                    yield film_work_result, time_last_update
+
+                else:
+                    modify_filmworks_ids = self.load_modified_id(
+                        changed_ids,
+                        id=table.ID,
+                        table=table.FOREIGN_KEY
+                    )
+
+                    if len(modify_filmworks_ids) == 0:
+                        yield None, time_last_update
+                        return
+
+                    movies = self.extract_data_for_load_in_elastic(modify_filmworks_ids)
+                    yield movies, time_last_update
 
     def load_modified_id(self, list_id, id: str, table: str) -> Union[str, tuple]:
         """Load filmworks ids that have been changed"""
@@ -97,12 +98,12 @@ class PostgresExtractor:
             ORDER BY fw.id;
                 """.format(list_id))
 
-            while True:
-                filmworks_data = cur.fetchmany(self.fetch_size)
+            filmworks_data = cur.fetchall()
 
-                if len(filmworks_data) == 0:
-                    return
-                yield self.formatting(filmworks_data)
+            if len(filmworks_data) == 0:
+                return
+
+            return self.formatting(filmworks_data)
 
     @staticmethod
     def formatting(filmworks_data: list) -> list[Movie]:
