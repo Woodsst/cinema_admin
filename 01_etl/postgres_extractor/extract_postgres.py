@@ -25,8 +25,6 @@ class PostgresExtractor:
 
             while changed_ids := cur.fetchmany(self.fetch_size):
 
-                if len(changed_ids) == 0:
-                    return
                 time_last_update = str(changed_ids[-1]['modified'])
                 changed_ids = tuple([x['id'] for x in changed_ids])
 

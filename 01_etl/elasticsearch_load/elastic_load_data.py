@@ -11,7 +11,7 @@ class ElasticLoad:
     def load_movies(self, movies_list: list[Movie]):
         """Loading movies in elasticserch"""
 
-        r = [{
+        movies_for_bulk = [{
             '_index': x.index,
             '_id': x.fw_id,
             '_type': x.type,
@@ -26,5 +26,5 @@ class ElasticLoad:
             'writers': x.writers,
             'writers_names': x.writers_names
         } for x in movies_list]
-        logger.info(f'load in elasticsearch movies - {r}')
-        helpers.bulk(self.con, r)
+        logger.info(f'load in elasticsearch movies - {movies_for_bulk}')
+        helpers.bulk(self.con, movies_for_bulk)
