@@ -1,7 +1,7 @@
 import datetime
 from typing import Generator, Union
 from postgres_extractor.tables import Tables, Roles
-from elasticsearch_load.movie_model import Movie
+from elasticsearch_load.movie_model import Movie, Genre
 from src.logging_config import logger
 
 
@@ -86,6 +86,7 @@ class PostgresExtractor:
                 pfw.role,
                 p.id,
                 p.full_name,
+                g.id as p_id,
                 g.name
             FROM content.film_work fw
             LEFT JOIN content.person_film_work pfw ON pfw.film_work_id = fw.id
@@ -101,12 +102,13 @@ class PostgresExtractor:
             if len(filmworks_data) == 0:
                 return
 
-            return self.formatting(filmworks_data)
+            return self.formatting_in_movie(filmworks_data)
 
     @staticmethod
-    def formatting(filmworks_data: list) -> list[Movie]:
+    def formatting_in_movie(filmworks_data: list) -> list[Movie]:
         """Formate data for load in elasticsearch"""
-
+        genres = {genre['name']: genre['p_id'] for genre in filmworks_data}
+        genres = [Genre(genre=genre, id=id_) for genre, id_ in genres.items()]
         movies = []
         first = filmworks_data[0]
         s = Movie(
@@ -150,4 +152,5 @@ class PostgresExtractor:
             if movie == filmworks_data[-1]:
                 movies.append(s)
 
-        return movies
+        return {"movies": movies,
+                "genres": genres}

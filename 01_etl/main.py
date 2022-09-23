@@ -58,7 +58,8 @@ class ETL:
                         self.state.set_state(table.NAME,
                                              time_update)
                         continue
-                    self.elastic.load_movies(data)
+                    self.elastic.load_movies(data.get('movies'))
+                    self.elastic.load_genres(data.get('genres'))
                     self.state.set_state(table.NAME,
                                          time_update)
 
