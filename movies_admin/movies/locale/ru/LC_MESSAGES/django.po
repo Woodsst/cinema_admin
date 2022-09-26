@@ -64,6 +64,10 @@ msgstr "Рейтинг"
 msgid "creation date"
 msgstr "Дата премьеры"
 
+#: movies/models.py:52
+msgid "file path"
+msgstr "Путь к файлу"
+
 #: movies/models.py:54
 msgid "movie"
 msgstr "Фильм"
@@ -115,3 +119,4 @@ msgstr "Автор"
 #: movies/models.py:116
 msgid "role"
 msgstr "Роль"
+

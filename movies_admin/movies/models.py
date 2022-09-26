@@ -49,6 +49,7 @@ class FilmWork(TimeStampedMixin, UUIDMixin):
         ]
     )
     creation_date = models.DateField(_('creation date'), blank=True, null=True)
+    file_path = models.CharField(_('file path'), blank=True, null=True)
 
     class FilmType(models.TextChoices):
         MOVIE = 'mv', _('movie')
