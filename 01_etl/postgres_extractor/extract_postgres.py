@@ -102,16 +102,19 @@ class PostgresExtractor:
             if len(filmworks_data) == 0:
                 return
 
-            return self.formatting_in_movie(filmworks_data)
+            return self.formatting(filmworks_data)
 
     @staticmethod
-    def formatting_in_movie(filmworks_data: list) -> list[Movie]:
+    def formatting(filmworks_data: list) -> list[Movie]:
         """Formate data for load in elasticsearch"""
+
         genres = {genre['name']: genre['p_id'] for genre in filmworks_data}
         genres = [Genre(genre=genre, id=id_) for genre, id_ in genres.items()]
+
         movies = []
         first = filmworks_data[0]
-        s = Movie(
+
+        filmwork = Movie(
             fw_id=first['fw_id'],
             description=first['description'],
             imdb_rating=first['rating'],
@@ -120,9 +123,9 @@ class PostgresExtractor:
 
         for movie in filmworks_data:
 
-            if s.fw_id != movie['fw_id']:
-                movies.append(s)
-                s = Movie(
+            if filmwork.fw_id != movie['fw_id']:
+                movies.append(filmwork)
+                filmwork = Movie(
                     fw_id=movie['fw_id'],
                     description=movie['description'],
                     imdb_rating=movie['rating'],
@@ -135,22 +138,22 @@ class PostgresExtractor:
             person = {'id': person_id, 'name': person_name}
             genre = movie['name']
 
-            if role == Roles.ACTOR.value and person not in s.actors:
-                s.actors.append({'id': person_id, 'name': person_name})
-                s.actors_names.append(person_name)
+            if role == Roles.ACTOR.value and person not in filmwork.actors:
+                filmwork.actors.append({'id': person_id, 'name': person_name})
+                filmwork.actors_names.append(person_name)
 
-            if role == Roles.DIRECTOR.value and person_name not in s.director:
-                s.director = person_name
+            if role == Roles.DIRECTOR.value and person_name not in filmwork.director:
+                filmwork.director = person_name
 
-            if role == Roles.WRITER.value and person not in s.writers:
-                s.writers.append({'id': person_id, 'name': person_name})
-                s.writers_names.append(person_name)
+            if role == Roles.WRITER.value and person not in filmwork.writers:
+                filmwork.writers.append({'id': person_id, 'name': person_name})
+                filmwork.writers_names.append(person_name)
 
-            if genre not in s.genre:
-                s.genre.append(genre)
+            if genre not in filmwork.genre:
+                filmwork.genre.append(genre)
 
             if movie == filmworks_data[-1]:
-                movies.append(s)
+                movies.append(filmwork)
 
         return {"movies": movies,
                 "genres": genres}
