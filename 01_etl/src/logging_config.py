@@ -19,7 +19,7 @@ def logger_config():
             "console": {
                 "formatter": "std_out",
                 "class": "logging.StreamHandler",
-                "level": 'INFO'
+                "level": 'WARNING'
             }
         },
         "formatters": {

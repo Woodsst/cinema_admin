@@ -25,3 +25,11 @@ class Genre(ModelForElastic):
     index: str = 'genres'
     genre: str = ''
     id: str = ''
+
+
+class Person(ModelForElastic):
+    index: str = 'persons'
+    filmworks: list[str] = []
+    id: str = ''
+    full_name: str = ''
+    role: list[str] = []

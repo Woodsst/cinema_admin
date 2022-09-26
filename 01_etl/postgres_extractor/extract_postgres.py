@@ -1,7 +1,7 @@
 import datetime
 from typing import Generator, Union
 from postgres_extractor.tables import Tables, Roles
-from elasticsearch_load.movie_model import Movie, Genre
+from elasticsearch_load.movie_model import Movie, Genre, Person
 from src.logging_config import logger
 
 
@@ -48,7 +48,11 @@ class PostgresExtractor:
                         yield None, time_last_update
                         return
 
+                    persons = self.load_persons(modify_filmworks_ids)
+
                     movies = self.extract_data_for_load_in_elastic(modify_filmworks_ids)
+                    movies['persons'] = persons
+
                     yield movies, time_last_update
 
     def load_modified_id(self, list_id, id: str, table: str) -> Union[str, tuple]:
@@ -71,6 +75,7 @@ class PostgresExtractor:
             return tuple([x['id'] for x in changed_filmwork_ids])
 
     def extract_data_for_load_in_elastic(self, list_id: tuple) -> Union[list[Movie], None]:
+
         """Load all movies data for recording in elasticsearch"""
 
         with self.con.cursor() as cur:
@@ -105,7 +110,7 @@ class PostgresExtractor:
             return self.formatting(filmworks_data)
 
     @staticmethod
-    def formatting(filmworks_data: list) -> list[Movie]:
+    def formatting(filmworks_data: list) -> dict:
         """Formate data for load in elasticsearch"""
 
         genres = {genre['name']: genre['p_id'] for genre in filmworks_data}
@@ -157,3 +162,58 @@ class PostgresExtractor:
 
         return {"movies": movies,
                 "genres": genres}
+
+    def load_persons(self, list_id: list) -> list[Person]:
+        """Load persons data for recording in elasticsearch"""
+
+        with self.con.cursor() as cur:
+            cur.execute("""
+            SELECT
+            p.id as p_id,
+            p.full_name,
+            role,
+            film_work_id
+            from content.person p
+            LEFT JOIN content.person_film_work ON p.id = person_id
+            WHERE film_work_id IN {0}
+            ORDER BY p_id
+            """.format(list_id))
+
+            result = cur.fetchall()
+
+            return self.formatting_persons(result)
+
+    @staticmethod
+    def formatting_persons(persons_data: list) -> list[Person]:
+        """Formatting raw dict persons data to Person model"""
+
+        persons = []
+        first = persons_data[0]
+
+        raw_person = Person(
+            id=first['p_id'],
+            full_name=first['full_name']
+        )
+
+        for person in persons_data:
+
+            if raw_person.id != person['p_id']:
+                persons.append(raw_person)
+                raw_person = Person(
+                    id=person['p_id'],
+                    full_name=person['full_name']
+                )
+
+            film_work_id = person.get('film_work_id')
+            role = person.get('role')
+
+            if role not in raw_person.role:
+                raw_person.role.append(role)
+
+            if film_work_id not in raw_person.filmworks:
+                raw_person.filmworks.append(film_work_id)
+
+            if person == persons_data[-1]:
+                persons.append(raw_person)
+
+        return persons

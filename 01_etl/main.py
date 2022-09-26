@@ -60,6 +60,7 @@ class ETL:
                         continue
                     self.elastic.load_movies(data.get('movies'))
                     self.elastic.load_genres(data.get('genres'))
+                    self.elastic.load_persons(data.get('persons'))
                     self.state.set_state(table.NAME,
                                          time_update)
 
@@ -76,7 +77,7 @@ def main(settings: Settings):
                   elasticsearch_con=elastic,
                   research_time=settings.research_time,
                   fetchsize=settings.postgres_fetchsize)
-        logger.info('app start')
+        logger.warn('app start')
         etl.run()
 
 
