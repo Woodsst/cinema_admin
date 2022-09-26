@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(null=True, verbose_name='description')),
                 ('rating', models.FloatField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)], verbose_name='rating')),
                 ('creation_date', models.DateField(blank=True, null=True, verbose_name='creation date')),
-                ('file_path', models.TextField(blank=True, null=True)),
+                ('file_path', models.TextField(blank=True, null=True, max_length=512)),
                 ('type', models.CharField(choices=[('mv', 'movie'), ('tv', 'tv show')], max_length=17, verbose_name='type')),
             ],
             options={

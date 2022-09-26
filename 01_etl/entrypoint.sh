@@ -160,7 +160,8 @@ curl -XPUT http://elasticsearch:9200/genres -H 'Content-Type: application/json' 
         "type": "keyword"
       },
       "genre": {
-        "type": "keyword"
+        "type": "text",
+        "analyzer": "ru_en"
       }
     }
   }
@@ -214,24 +215,16 @@ curl -XPUT http://elasticsearch:9200/persons -H 'Content-Type: application/json'
       "id": {
         "type": "keyword"
       },
-      "name": {
-        "type": "keyword"
+      "full_name": {
+        "type": "text",
+        "analyzer": "ru_en"
       },
       "role": {
-        "type": "keyword"
+        "type": "text",
+        "analyzer": "ru_en"
       },
       "filmworks": {
-        "type": "nested",
-        "dynamic": "strict",
-        "properties": {
-          "id": {
-            "type": "keyword"
-          },
-          "filmwork": {
-            "type": "text",
-            "analyzer": "ru_en"
-          }
-        }
+        "type": "keyword"
       }
     }
   }

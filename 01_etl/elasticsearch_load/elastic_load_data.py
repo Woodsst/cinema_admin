@@ -1,6 +1,6 @@
 from elasticsearch import Elasticsearch, helpers
 
-from elasticsearch_load.movie_model import Movie, Genre
+from elasticsearch_load.movie_model import Movie, Genre, Person
 from src.logging_config import logger
 
 
@@ -26,6 +26,7 @@ class ElasticLoad:
             'writers': movie.writers,
             'writers_names': movie.writers_names
         } for movie in movies_list]
+
         logger.info(f'load in elasticsearch movies - {movies_for_bulk}')
         helpers.bulk(self.con, movies_for_bulk)
 
@@ -40,5 +41,24 @@ class ElasticLoad:
             'id': genre.id}
             for genre in genres_list]
 
-        logger.info(f'load in elasticsearch movies - {genres_for_bulk}')
+        logger.info(f'load in elasticsearch genres - {genres_for_bulk}')
         helpers.bulk(self.con, genres_for_bulk)
+
+    def load_persons(self, persons_list: list[Person]):
+        """Load persons in elasticsearch"""
+
+        if persons_list is None:
+            return
+
+        persons_for_bulk = [{
+            '_index': person.index,
+            '_id': person.id,
+            '_type': person.type,
+            'filmworks': person.filmworks,
+            'role': person.role,
+            'full_name': person.full_name,
+            'id': person.id}
+            for person in persons_list]
+
+        logger.info(f'load in elasticsearch persons - {persons_for_bulk}')
+        helpers.bulk(self.con, persons_for_bulk)
