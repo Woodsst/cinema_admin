@@ -11,6 +11,8 @@ services:
       - movies_admin/config/.dev.env
     expose:
     - "8000"
+    networks:
+      - djangonet
   postgres:
     image: postgres:13
     expose:
@@ -19,6 +21,8 @@ services:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: 123qwe
       POSTGRES_DB: movies_database
+    networks:
+      - djangonet
   nginx:
     image: nginx:latest
     volumes:
@@ -29,6 +33,8 @@ services:
       - django
     ports:
       - "80:80"
+    networks:
+      - djangonet
   elasticsearch:
     image: elasticsearch:7.17.6
     expose:
@@ -36,6 +42,9 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms200m -Xmx200m
+    networks:
+      - djangonet
   etl:
     build: ./01_etl
     env_file:
@@ -43,6 +52,12 @@ services:
     depends_on:
       - nginx
     entrypoint: ["/opt/app/entrypoint.sh"]
+    networks:
+      - djangonet
 
 volumes:
   static_volume:
+
+networks:
+  djangonet:
+    name: api_network
