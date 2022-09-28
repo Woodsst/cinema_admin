@@ -218,13 +218,6 @@ curl -XPUT http://elasticsearch:9200/persons -H 'Content-Type: application/json'
       "full_name": {
         "type": "text",
         "analyzer": "ru_en"
-      },
-      "role": {
-        "type": "text",
-        "analyzer": "ru_en"
-      },
-      "filmworks": {
-        "type": "keyword"
       }
     }
   }

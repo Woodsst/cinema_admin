@@ -54,8 +54,6 @@ class ElasticLoad:
             '_index': person.index,
             '_id': person.id,
             '_type': person.type,
-            'filmworks': person.filmworks,
-            'role': person.role,
             'full_name': person.full_name,
             'id': person.id}
             for person in persons_list]

@@ -29,7 +29,5 @@ class Genre(ModelForElastic):
 
 class Person(ModelForElastic):
     index: str = 'persons'
-    filmworks: list[str] = []
     id: str = ''
     full_name: str = ''
-    role: list[str] = []

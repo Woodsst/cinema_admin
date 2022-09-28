@@ -48,10 +48,7 @@ class PostgresExtractor:
                         yield None, time_last_update
                         return
 
-                    persons = self.load_persons(modify_filmworks_ids)
-
                     movies = self.extract_data_for_load_in_elastic(modify_filmworks_ids)
-                    movies['persons'] = persons
 
                     yield movies, time_last_update
 
@@ -89,9 +86,9 @@ class PostgresExtractor:
                 fw.created,
                 fw.modified,
                 pfw.role,
-                p.id,
+                p.id as p_id,
                 p.full_name,
-                g.id as p_id,
+                g.id as g_id,
                 g.name
             FROM content.film_work fw
             LEFT JOIN content.person_film_work pfw ON pfw.film_work_id = fw.id
@@ -113,8 +110,12 @@ class PostgresExtractor:
     def formatting(filmworks_data: list) -> dict:
         """Formate data for load in elasticsearch"""
 
-        genres = {genre['name']: genre['p_id'] for genre in filmworks_data}
-        genres = [Genre(genre=genre, id=id_) for genre, id_ in genres.items()]
+        raw_genres = {genre['name']: genre['g_id'] for genre in filmworks_data}
+        genres = [Genre(genre=genre, id=id_) for genre, id_ in raw_genres.items()]
+
+        raw_persosns = {person['full_name']: person['p_id'] for person in filmworks_data}
+        persons = [Person(full_name=full_name, id=id_) for full_name, id_ in raw_persosns.items()
+                   if full_name and id_ is not None]
 
         movies = []
         first = filmworks_data[0]
@@ -139,7 +140,7 @@ class PostgresExtractor:
 
             role = movie['role']
             person_name = movie['full_name']
-            person_id = movie['id']
+            person_id = movie['p_id']
             person = {'id': person_id, 'name': person_name}
             genre = movie['name']
 
@@ -161,59 +162,5 @@ class PostgresExtractor:
                 movies.append(filmwork)
 
         return {"movies": movies,
-                "genres": genres}
-
-    def load_persons(self, list_id: list) -> list[Person]:
-        """Load persons data for recording in elasticsearch"""
-
-        with self.con.cursor() as cur:
-            cur.execute("""
-            SELECT
-            p.id as p_id,
-            p.full_name,
-            role,
-            film_work_id
-            from content.person p
-            LEFT JOIN content.person_film_work ON p.id = person_id
-            WHERE film_work_id IN {0}
-            ORDER BY p_id
-            """.format(list_id))
-
-            result = cur.fetchall()
-
-            return self.formatting_persons(result)
-
-    @staticmethod
-    def formatting_persons(persons_data: list) -> list[Person]:
-        """Formatting raw dict persons data to Person model"""
-
-        persons = []
-        first = persons_data[0]
-
-        raw_person = Person(
-            id=first['p_id'],
-            full_name=first['full_name']
-        )
-
-        for person in persons_data:
-
-            if raw_person.id != person['p_id']:
-                persons.append(raw_person)
-                raw_person = Person(
-                    id=person['p_id'],
-                    full_name=person['full_name']
-                )
-
-            film_work_id = person.get('film_work_id')
-            role = person.get('role')
-
-            if role not in raw_person.role:
-                raw_person.role.append(role)
-
-            if film_work_id not in raw_person.filmworks:
-                raw_person.filmworks.append(film_work_id)
-
-            if person == persons_data[-1]:
-                persons.append(raw_person)
-
-        return persons
+                "genres": genres,
+                "persons": persons}
