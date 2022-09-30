@@ -62,4 +62,5 @@ volumes:
 
 networks:
   djangonet:
-    name: api_network
+    external:
+      name: api_network
