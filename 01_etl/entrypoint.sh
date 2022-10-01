@@ -137,19 +137,6 @@ curl -XPUT http://elasticsearch:9200/genres -H 'Content-Type: application/json' 
           "type": "stemmer",
           "language": "russian"
         }
-      },
-      "analyzer": {
-        "ru_en": {
-          "tokenizer": "standard",
-          "filter": [
-            "lowercase",
-            "english_stop",
-            "english_stemmer",
-            "english_possessive_stemmer",
-            "russian_stop",
-            "russian_stemmer"
-          ]
-        }
       }
     }
   },
@@ -160,8 +147,7 @@ curl -XPUT http://elasticsearch:9200/genres -H 'Content-Type: application/json' 
         "type": "keyword"
       },
       "genre": {
-        "type": "text",
-        "analyzer": "ru_en"
+        "type": "keyword"
       }
     }
   }
@@ -193,19 +179,6 @@ curl -XPUT http://elasticsearch:9200/persons -H 'Content-Type: application/json'
           "type": "stemmer",
           "language": "russian"
         }
-      },
-      "analyzer": {
-        "ru_en": {
-          "tokenizer": "standard",
-          "filter": [
-            "lowercase",
-            "english_stop",
-            "english_stemmer",
-            "english_possessive_stemmer",
-            "russian_stop",
-            "russian_stemmer"
-          ]
-        }
       }
     }
   },
@@ -216,8 +189,7 @@ curl -XPUT http://elasticsearch:9200/persons -H 'Content-Type: application/json'
         "type": "keyword"
       },
       "full_name": {
-        "type": "text",
-        "analyzer": "ru_en"
+        "type": "keyword"
       }
     }
   }
