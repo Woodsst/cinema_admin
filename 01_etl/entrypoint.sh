@@ -189,7 +189,8 @@ curl -XPUT http://elasticsearch:9200/persons -H 'Content-Type: application/json'
         "type": "keyword"
       },
       "full_name": {
-        "type": "keyword"
+        "type": "text",
+        "analyzer": "ru_en"
       }
     }
   }
