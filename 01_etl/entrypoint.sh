@@ -179,6 +179,19 @@ curl -XPUT http://elasticsearch:9200/persons -H 'Content-Type: application/json'
           "type": "stemmer",
           "language": "russian"
         }
+      },
+      "analyzer": {
+        "ru_en": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "english_stop",
+            "english_stemmer",
+            "english_possessive_stemmer",
+            "russian_stop",
+            "russian_stemmer"
+          ]
+        }
       }
     }
   },
