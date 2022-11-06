@@ -81,6 +81,7 @@ class PostgresExtractor:
                 fw.id as fw_id,
                 fw.title,
                 fw.description,
+                fw.permission,
                 fw.rating,
                 fw.type,
                 fw.created,
@@ -125,6 +126,7 @@ class PostgresExtractor:
             description=first['description'],
             imdb_rating=first['rating'],
             title=first['title'],
+            permission=first['permission']
         )
 
         for movie in filmworks_data:
@@ -135,7 +137,8 @@ class PostgresExtractor:
                     fw_id=movie['fw_id'],
                     description=movie['description'],
                     imdb_rating=movie['rating'],
-                    title=movie['title']
+                    title=movie['title'],
+                    permission=movie['permission']
                 )
 
             role = movie['role']

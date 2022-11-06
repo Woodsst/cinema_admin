@@ -39,6 +39,7 @@ class Person(UUIDMixin, TimeStampedMixin):
 class FilmWork(TimeStampedMixin, UUIDMixin):
     title = models.CharField(_('title'), max_length=255, blank=True)
     description = models.TextField(_('description'), null=True)
+    permission = models.TextField("permission", null=True)
     rating = models.FloatField(
         _('rating'),
         blank=True,

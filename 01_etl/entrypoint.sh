@@ -54,6 +54,9 @@ curl -XPUT http://elasticsearch:9200/movies -H 'Content-Type: application/json' 
       "imdb_rating": {
         "type": "float"
       },
+      "permission": {
+        "type" : "keyword"
+      },
       "genre": {
         "type": "keyword"
       },

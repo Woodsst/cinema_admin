@@ -24,7 +24,8 @@ class ElasticLoad:
             'imdb_rating': movie.imdb_rating,
             'title': movie.title,
             'writers': movie.writers,
-            'writers_names': movie.writers_names
+            'writers_names': movie.writers_names,
+            'permission': movie.permission
         } for movie in movies_list]
 
         logger.info(f'load in elasticsearch movies - {movies_for_bulk}')

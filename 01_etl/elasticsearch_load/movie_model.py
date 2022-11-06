@@ -19,6 +19,7 @@ class Movie(ModelForElastic):
     title: str = ''
     writers: list[dict] = []
     writers_names: list[str] = []
+    permission: Union[str, None] = ''
 
 
 class Genre(ModelForElastic):
