@@ -39,7 +39,6 @@ class Person(UUIDMixin, TimeStampedMixin):
 class FilmWork(TimeStampedMixin, UUIDMixin):
     title = models.CharField(_('title'), max_length=255, blank=True)
     description = models.TextField(_('description'), null=True)
-    permission = models.TextField("permission", null=True)
     rating = models.FloatField(
         _('rating'),
         blank=True,
@@ -60,6 +59,17 @@ class FilmWork(TimeStampedMixin, UUIDMixin):
         _('type'),
         max_length=17,
         choices=FilmType.choices
+    )
+
+    class PermissionsType(models.TextChoices):
+        USER = 'us', _('user')
+        SUBSCRIBER = 'su', _('subscriber')
+        ALL = 'al', _('all')
+
+    permission = models.CharField(
+        _('permission'),
+        max_length=36,
+        choices=PermissionsType.choices
     )
 
     def __str__(self):
