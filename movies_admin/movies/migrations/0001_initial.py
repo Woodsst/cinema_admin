@@ -22,6 +22,7 @@ class Migration(migrations.Migration):
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('title', models.CharField(blank=True, max_length=255, verbose_name='title')),
+                ('file_path', models.CharField(blank=True, max_length=512, null=True, verbose_name='file path')),
                 ('description', models.TextField(null=True, verbose_name='description')),
                 ('rating', models.FloatField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)], verbose_name='rating')),
                 ('creation_date', models.DateField(blank=True, null=True, verbose_name='creation date')),
