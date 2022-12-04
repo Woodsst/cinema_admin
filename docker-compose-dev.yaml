@@ -33,9 +33,9 @@ services:
       - ES_JAVA_OPTS=-Xms200m -Xmx200m
 
   etl:
-    build: ./01_etl
+    build: etl
     env_file:
-      - ./01_etl/.dev.env
+      - etl/.dev.env
     entrypoint: ["/opt/app/entrypoint.sh"]
 
   nginx:
